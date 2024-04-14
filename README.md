@@ -144,7 +144,28 @@ The previously decrypted exe was decrypting a payload.txt attached to its Resour
 
 # Running the tool
 After running the tool, the output will be the following:
-
+```bash
+──(connar㉿kali)-[~/Documents/JlaiveCustomDeobfuscator]
+└─$ python unjlaive.py 
+[*] Sample deobfuscated successfully. Writting result to cleared_Jlaive.ps1
+[*] Extracted Key: KsXDu/ZuLORpumzY7tRqieLJCAHO4HhkWSLGTa9vFUs=
+[*] Extracted IV: NP/92qw/SR3ausC7GbKhag==
+[*] Extracted the wzpaloqi.0.cs file. Writting to wzpaloqi.0.cs
+[*] Extracting and decrypting the loader_stub. Writting result to loader_stub.exe
+[*] Parsing loader_stub.exe to decrypt the final executable...
+[*] Resource 'payload.txt' extracted to 'payload_extracted.txt'
+[+] Main method found:
+        [*] Module: tmpBBD0.tmp
+        [*] Method: System.Void qCaVAPJGIk.OItkKtykOO::Main(System.String[])
+[*] Loading instructions of Main...
+[*] Key found: "8AOx7b0fGddReqjf+6WzB7n6yOJGvgsGZXvpBa9764w="
+[*] IV found: "T1D5QuS4MCdJRbPrcYCB/Q=="
+[*] Original executable recovered successfully. Writing to 'target_exe.exe'...
+                                                                                                                                                                                                                                            
+┌──(connar㉿kali)-[~/Documents/JlaiveCustomDeobfuscator]
+└─$ ls
+cleared_Jlaive.ps1  dnlib-4.4.0  loader_stub.exe  obfuscated.bat  payload_extracted.txt  target_exe.exe  tmp_Jlaive.ps1  unjlaive.py  wzpaloqi.0.cs
+```
 
 # Dependencies
 This script needs the following:
