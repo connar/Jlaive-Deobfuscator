@@ -14,3 +14,10 @@ So, here is my attempt of writing a script in python that:
 - Recovers all the .ps1 files created.
 - Recovers the keys, ivs and encrypted blocks and decrypts them, providing the intermediate .exe files.
 - Recovers the original executable before being converted to that obfuscated .bat file.
+
+
+# Dependencies
+This script needs the following:
+- pythonnet
+- ironpython
+- dnlib.dll
