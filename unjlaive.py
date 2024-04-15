@@ -4,6 +4,7 @@ import re
 from os.path import realpath, dirname, join
 import gzip
 import pefile
+import sys
 
 import clr
 clr.AddReference("System.Reflection")
@@ -26,7 +27,7 @@ def find_main_method(module):
                 return m
     return None
 
-def parse_dotnet():
+def parse_dotnet(absolute_path_of_assembly):
     # Path to your .NET executable
     exe_path = absolute_path_of_assembly
 
@@ -194,97 +195,110 @@ def parse_set_commands(filename):
 
     return variable_declarations, concatenated_values, line
 
-# Example usage:
-filename = './obfuscated.bat'
-declarations, concatenated_values, encrypted = parse_set_commands(filename)
-
-# Print out the generated Python variable declarations
-for declaration in declarations:
-    exec(declaration)
 
 
-# Initialize an empty string for concatenation
-deobfuscated = ""
+def main():
 
-# Iterate through each concatenated value
-for value in concatenated_values:
-    # Split the value on '+' to get individual parts
-    parts = value.split('+')
+    if len(sys.argv) != 2:
+        # If no filename is provided or if more than one argument is given
+        print("Usage: python unjlaive.py [obfuscated.bat]")
+        return
 
-    # Add the parts together
-    result = ""
-    for part in parts:
-        result += part + "+"
+    # Example usage:
+    filename = sys.argv[1]
+    declarations, concatenated_values, encrypted = parse_set_commands(filename)
 
-    # Append the result to the deobfuscated string
-    deobfuscated += result
-
-deobfuscated = deobfuscated[:-1]
-deobfed = eval(deobfuscated)
+    # Print out the generated Python variable declarations
+    for declaration in declarations:
+        exec(declaration)
 
 
-input_filename = './obfuscated.bat'
-output_filename_tmp = './tmp_Jlaive.ps1'
+    # Initialize an empty string for concatenation
+    deobfuscated = ""
 
-concatenated_values = write_non_set_lines_to_file(input_filename, output_filename_tmp, deobfed)
+    # Iterate through each concatenated value
+    for value in concatenated_values:
+        # Split the value on '+' to get individual parts
+        parts = value.split('+')
 
-print("[*] Sample deobfuscated successfully. Writting result to cleared_Jlaive.ps1")
-final_output = 'cleared_Jlaive.ps1'
-replace_text_in_file(output_filename_tmp, final_output, concatenated_values, deobfed)
+        # Add the parts together
+        result = ""
+        for part in parts:
+            result += part + "+"
 
-# Define regex pattern to extract Base64-encoded strings
-base64_pattern = r'FromBase64String\("([^"]+)"\)'
+        # Append the result to the deobfuscated string
+        deobfuscated += result
 
-# Find all matches of Base64 strings in the text
-base64_matches = re.findall(base64_pattern, deobfed)
-
-# Extract and decode the Base64 strings to get key and IV
-if len(base64_matches) >= 2:
-    key_b64 = base64_matches[1]
-    iv_b64 = base64_matches[2]
-
-    key = b64decode(key_b64.encode())
-    iv = b64decode(iv_b64.encode())
-    print(f"[*] Extracted Key: {key_b64}")
-    print(f"[*] Extracted IV: {iv_b64}")
-else:
-    print("Key and IV could not be extracted.")
-
-pattern = r'FromBase64String\("([^"]+)"\)'
-matches = re.findall(pattern, deobfed)
-if matches:
-    b64_extracted = matches[0]
-
-    print("[*] Extracted the wzpaloqi.0.cs file. Writting to wzpaloqi.0.cs")
-    with open("./wzpaloqi.0.cs", "wb") as ps:
-        ps.write(b64decode(b64_extracted.encode()))
-    ps.close()
-else:
-    print("Could not extract the wzpaloqi.0.cs file.")
+    deobfuscated = deobfuscated[:-1]
+    deobfed = eval(deobfuscated)
 
 
-enc_decoded = b64decode(encrypted.encode())
-loader_stub = decrypt_aes_cbc_and_decompress(enc_decoded, key, iv)
-print("[*] Extracting and decrypting the loader_stub. Writting result to loader_stub.exe")
+    input_filename = sys.argv[1]
+    output_filename_tmp = './tmp_Jlaive.ps1'
 
-with open("./loader_stub.exe", "wb") as l:
-    l.write(loader_stub)
-l.close()
+    concatenated_values = write_non_set_lines_to_file(input_filename, output_filename_tmp, deobfed)
+
+    print("[*] Sample deobfuscated successfully. Writting result to cleared_Jlaive.ps1")
+    final_output = 'cleared_Jlaive.ps1'
+    replace_text_in_file(output_filename_tmp, final_output, concatenated_values, deobfed)
+
+    # Define regex pattern to extract Base64-encoded strings
+    base64_pattern = r'FromBase64String\("([^"]+)"\)'
+
+    # Find all matches of Base64 strings in the text
+    base64_matches = re.findall(base64_pattern, deobfed)
+
+    # Extract and decode the Base64 strings to get key and IV
+    if len(base64_matches) >= 2:
+        key_b64 = base64_matches[1]
+        iv_b64 = base64_matches[2]
+
+        key = b64decode(key_b64.encode())
+        iv = b64decode(iv_b64.encode())
+        print(f"[*] Extracted Key: {key_b64}")
+        print(f"[*] Extracted IV: {iv_b64}")
+    else:
+        print("Key and IV could not be extracted.")
+
+    pattern = r'FromBase64String\("([^"]+)"\)'
+    matches = re.findall(pattern, deobfed)
+    if matches:
+        b64_extracted = matches[0]
+
+        print("[*] Extracted the wzpaloqi.0.cs file. Writting to wzpaloqi.0.cs")
+        with open("./wzpaloqi.0.cs", "wb") as ps:
+            ps.write(b64decode(b64_extracted.encode()))
+        ps.close()
+    else:
+        print("Could not extract the wzpaloqi.0.cs file.")
 
 
-print("[*] Parsing loader_stub.exe to decrypt the final executable...")
+    enc_decoded = b64decode(encrypted.encode())
+    loader_stub = decrypt_aes_cbc_and_decompress(enc_decoded, key, iv)
+    print("[*] Extracting and decrypting the loader_stub. Writting result to loader_stub.exe")
 
-absolute_path_of_assembly = join(current_directory, "loader_stub.exe")
-resource_name = "payload.txt"
-output_file = "payload_extracted.txt"
-payload_txt = extract_embedded_resource(absolute_path_of_assembly , resource_name, output_file)
+    with open("./loader_stub.exe", "wb") as l:
+        l.write(loader_stub)
+    l.close()
 
 
-key_, iv_ = parse_dotnet()
-print(f"[*] Key found: {key_}")
-print(f"[*] IV found: {iv_}")
+    print("[*] Parsing loader_stub.exe to decrypt the final executable...")
 
-decrypted = decrypt_aes_cbc_and_decompress(b64decode(payload_txt), b64decode(key_), b64decode(iv_))
-print("[*] Original executable recovered successfully. Writing to 'target_exe.exe'...")
-with open("./target_exe.exe", "wb") as fnl:
-    fnl.write(decrypted)
+    absolute_path_of_assembly = join(current_directory, "loader_stub.exe")
+    resource_name = "payload.txt"
+    output_file = "payload_extracted.txt"
+    payload_txt = extract_embedded_resource(absolute_path_of_assembly , resource_name, output_file)
+
+
+    key_, iv_ = parse_dotnet(absolute_path_of_assembly)
+    print(f"[*] Key found: {key_}")
+    print(f"[*] IV found: {iv_}")
+
+    decrypted = decrypt_aes_cbc_and_decompress(b64decode(payload_txt), b64decode(key_), b64decode(iv_))
+    print("[*] Original executable recovered successfully. Writing to 'target_exe.exe'...")
+    with open("./target_exe.exe", "wb") as fnl:
+        fnl.write(decrypted)
+
+
+if __name__ == "__main__":
+    main()
